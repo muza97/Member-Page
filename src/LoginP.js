@@ -1,30 +1,61 @@
-// LoginPage.js
-import React from 'react';
-import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import './LoginPage.css'; // Make sure to create and import your CSS file for styling
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signInWithEmailAndPassword  // Added this import
+} from 'firebase/auth';
+import './LoginPage.css';
 
 const LoginPage = () => {
-  const auth = getAuth();
-  const provider = new GoogleAuthProvider();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleGoogleLogin = () => {
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        // This gives you a Google Access Token.
-        // Handle successful sign in here (e.g., redirect to another page)
+  const handleEmailPasswordLogin = (e) => {
+    e.preventDefault();
+    const auth = getAuth();
+    
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        navigate('/landing', { state: { email: user.email } });
       })
       .catch((error) => {
-        // Handle Errors here.
-        console.error('Error during Google sign-in:', error);
+        console.error('Error:', error);
+        // Handle error (e.g., show error message to user)
+      });
+  };
+
+  const handleGoogleLogin = () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(getAuth(), provider)
+      .then((result) => {
+        navigate('/landing', { state: { email: result.user.email } });
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        // Handle error (e.g., show error message to user)
       });
   };
 
   return (
     <div className="login-container">
-      <form className="login-form">
+      <form className="login-form" onSubmit={handleEmailPasswordLogin}>
         <h2>Login</h2>
-        <input type="email" placeholder="Email" />
-        <input type="password" placeholder="Password" />
+        <input 
+          type="email" 
+          placeholder="Email" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+        />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          value={password} 
+          onChange={(e) => setPassword(e.target.value)} 
+        />
         <button type="submit">Sign In</button>
         <button type="button" onClick={handleGoogleLogin}>
           Sign in with Google
