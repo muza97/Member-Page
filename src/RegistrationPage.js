@@ -1,30 +1,24 @@
-// Similar structure to LoginPage, but with registration functionality
 import React, { useState } from 'react';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+
 
 const UserRegistration = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleRegistration = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:3000/registerUser', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const auth = getAuth();
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      const data = await response.json();
-
-      if (response.status === 201) {
-        setMessage(data.msg);
-      } else {
-        throw new Error(data.error);
-      }
+      setMessage(`User registered successfully: ${user.email}`)
+      navigate('/login');;
     } catch (error) {
       console.error('Registration error:', error);
       setMessage('Error registering user');
@@ -34,7 +28,7 @@ const UserRegistration = () => {
   return (
     <div>
       <h2>Register User</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleRegistration}>
         <label>
           Email:
           <input
