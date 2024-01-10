@@ -21,10 +21,12 @@ const MapComponent = () => {
   const [startAddress, setStartAddress] = useState('');
   const [endAddress, setEndAddress] = useState('');
 
+ 
+  const apiKey =process.env.REACT_APP_ACCESS_KEY;
+ 
 
   const fetchAddress = async (lat, lng) => {
-    const apiKey =process.env.REACT_APP_API_KEY2;
-    console.log(apiKey);
+ 
 
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
 
@@ -58,7 +60,7 @@ const MapComponent = () => {
   };
 
   return (
-   <LoadScript googleMapsApiKey={{REACT_APP_API_KEY2}}>
+   <LoadScript googleMapsApiKey={apiKey}>;
 
       <GoogleMap
         mapContainerStyle={containerStyle}
