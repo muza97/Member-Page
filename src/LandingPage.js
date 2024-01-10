@@ -1,17 +1,12 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import MapComponent from './MapComponent';
 
 const LandingPage = () => {
-  const location = useLocation();
-  const email = location.state?.email;
-
   return (
     <div>
-      {email ? (
-        <p>You are signed in with the email: {email}</p>
-      ) : (
-        <p>You are not signed in.</p>
-      )}
+      <h1>Welcome to the Taxi App</h1>
+      <p>You are signed in with the email: {email}</p>
+      <MapComponent />
     </div>
   );
 };
