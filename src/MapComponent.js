@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { GoogleMap, LoadScript, Marker, Autocomplete } from '@react-google-maps/api';
+import Geocode from 'react-geocode';
 import axios from 'axios';
 
 const containerStyle = {
@@ -13,7 +14,13 @@ const MapComponent = () => {
   const [endMarker, setEndMarker] = useState(null);
   const [startAddress, setStartAddress] = useState('');
   const [endAddress, setEndAddress] = useState('');
+  const libraries = ['places'];
+
   const apiKey = process.env.REACT_APP_ACCESS_KEY;
+
+  // Refs for the Autocomplete components
+  const startAutocompleteRef = useRef(null);
+  const endAutocompleteRef = useRef(null);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -21,12 +28,10 @@ const MapComponent = () => {
         const { latitude, longitude } = position.coords;
         setMapCenter({ lat: latitude, lng: longitude });
         setStartMarker({ lat: latitude, lng: longitude });
-        // Optionally, fetch the address for the starting position
         fetchAddress(latitude, longitude).then(setStartAddress);
       },
       (err) => {
         console.error(err);
-        // Set a default center if geolocation fails
         setMapCenter({ lat: 59.61426658893306, lng: 17.827052991031128 });
       }
     );
@@ -63,9 +68,63 @@ const MapComponent = () => {
     }
   };
 
+  const handleStartAddressChange = async (e) => {
+    const newAddress = e.target.value;
+    setStartAddress(newAddress);
+
+    try {
+      const response = await Geocode.fromAddress(newAddress);
+      const { lat, lng } = response.results[0].geometry.location;
+      setStartMarker({ lat, lng });
+    } catch (error) {
+      console.error('Error geocoding address:', error);
+    }
+  };
+
+  const handleEndAddressChange = async (e) => {
+    const newAddress = e.target.value;
+    setEndAddress(newAddress);
+
+    try {
+      const response = await Geocode.fromAddress(newAddress);
+      const { lat, lng } = response.results[0].geometry.location;
+      setEndMarker({ lat, lng });
+    } catch (error) {
+      console.error('Error geocoding address:', error);
+    }
+  };
+
+  const onLoadStartAutocomplete = (autocomplete) => {
+    startAutocompleteRef.current = autocomplete;
+  };
+
+  const onLoadEndAutocomplete = (autocomplete) => {
+    endAutocompleteRef.current = autocomplete;
+  };
+
+  const onPlaceChanged = (isStart) => {
+    const autocomplete = isStart ? startAutocompleteRef.current : endAutocompleteRef.current;
+    if (!autocomplete) return;
+
+    const place = autocomplete.getPlace();
+    const address = place.formatted_address;
+    const { lat, lng } = place.geometry.location;
+
+    if (isStart) {
+      setStartAddress(address);
+      setStartMarker({ lat: lat(), lng: lng() });
+    } else {
+      setEndAddress(address);
+      setEndMarker({ lat: lat(), lng: lng() });
+    }
+  };
+
   return (
     mapCenter && (
-      <LoadScript googleMapsApiKey={apiKey}>
+      <LoadScript
+        googleMapsApiKey={apiKey}
+        libraries={libraries} 
+      >
         <GoogleMap
           mapContainerStyle={containerStyle}
           center={mapCenter}
@@ -76,8 +135,29 @@ const MapComponent = () => {
           {endMarker && <Marker position={endMarker} />}
         </GoogleMap>
 
-        {startAddress && <p>Start Address: {startAddress}</p>}
-        {endAddress && <p>End Address: {endAddress}</p>}
+        <Autocomplete
+          onLoad={onLoadStartAutocomplete}
+          onPlaceChanged={() => onPlaceChanged(true)}
+        >
+          <input
+            type="text"
+            placeholder="Start Address"
+            value={startAddress}
+            onChange={handleStartAddressChange}
+          />
+        </Autocomplete>
+
+        <Autocomplete
+          onLoad={onLoadEndAutocomplete}
+          onPlaceChanged={() => onPlaceChanged(false)}
+        >
+          <input
+            type="text"
+            placeholder="End Address"
+            value={endAddress}
+            onChange={handleEndAddressChange}
+          />
+        </Autocomplete>
       </LoadScript>
     )
   );
