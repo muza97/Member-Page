@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import axios from 'axios';
 
@@ -7,29 +7,33 @@ const containerStyle = {
   height: '400px'
 };
 
-const center = {
-  lat: 59.61426658893306,
-  lng: 17.827052991031128
-};
-
-
-
-
 const MapComponent = () => {
+  const [mapCenter, setMapCenter] = useState(null);
   const [startMarker, setStartMarker] = useState(null);
   const [endMarker, setEndMarker] = useState(null);
   const [startAddress, setStartAddress] = useState('');
   const [endAddress, setEndAddress] = useState('');
+  const apiKey = process.env.REACT_APP_ACCESS_KEY;
 
- 
-  const apiKey =process.env.REACT_APP_ACCESS_KEY;
- 
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setMapCenter({ lat: latitude, lng: longitude });
+        setStartMarker({ lat: latitude, lng: longitude });
+        // Optionally, fetch the address for the starting position
+        fetchAddress(latitude, longitude).then(setStartAddress);
+      },
+      (err) => {
+        console.error(err);
+        // Set a default center if geolocation fails
+        setMapCenter({ lat: 59.61426658893306, lng: 17.827052991031128 });
+      }
+    );
+  }, []);
 
   const fetchAddress = async (lat, lng) => {
- 
-
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
-
     try {
       const response = await axios.get(url);
       if (response.data && response.data.results && response.data.results.length > 0) {
@@ -60,28 +64,22 @@ const MapComponent = () => {
   };
 
   return (
-   <LoadScript googleMapsApiKey={apiKey}>;
+    mapCenter && (
+      <LoadScript googleMapsApiKey={apiKey}>
+        <GoogleMap
+          mapContainerStyle={containerStyle}
+          center={mapCenter}
+          zoom={14}
+          onClick={handleMapClick}
+        >
+          {startMarker && <Marker position={startMarker} />}
+          {endMarker && <Marker position={endMarker} />}
+        </GoogleMap>
 
-      <GoogleMap
-        mapContainerStyle={containerStyle}
-        center={center}
-        zoom={14}
-        onClick={handleMapClick}
-      >
-        {startMarker && <Marker position={startMarker} />}
-        {endMarker && <Marker position={endMarker} />}
-      </GoogleMap>
-
-      {startAddress && (
-        <p>Start Address: {startAddress}</p>
-      )}
-
-      {endAddress && (
-        <p>End Address: {endAddress}</p>
-      )}
-
-     
-    </LoadScript>
+        {startAddress && <p>Start Address: {startAddress}</p>}
+        {endAddress && <p>End Address: {endAddress}</p>}
+      </LoadScript>
+    )
   );
 };
 
