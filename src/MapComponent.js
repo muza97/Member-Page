@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleMap, LoadScript, Marker, Autocomplete } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, Marker, Autocomplete, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 import Geocode from 'react-geocode';
 import axios from 'axios';
 
@@ -14,6 +14,10 @@ const MapComponent = () => {
   const [endMarker, setEndMarker] = useState(null);
   const [startAddress, setStartAddress] = useState('');
   const [endAddress, setEndAddress] = useState('');
+  const [directions, setDirections] = useState(null);
+  const [distance, setDistance] = useState('');
+  const [duration, setDuration] = useState('');
+  const [error, setError] = useState('');
   const libraries = ['places'];
 
   const apiKey = process.env.REACT_APP_ACCESS_KEY;
@@ -119,6 +123,32 @@ const MapComponent = () => {
     }
   };
 
+  const calculateRoute = async () => {
+    if (startMarker && endMarker) {
+      const DirectionsService = new window.google.maps.DirectionsService();
+
+      DirectionsService.route(
+        {
+          origin: new window.google.maps.LatLng(startMarker.lat, startMarker.lng),
+          destination: new window.google.maps.LatLng(endMarker.lat, endMarker.lng),
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === window.google.maps.DirectionsStatus.OK) {
+            setDirections(result);
+            setDistance(result.routes[0].legs[0].distance.text);
+            setDuration(result.routes[0].legs[0].duration.text);
+          } else {
+            setError("Error fetching directions.");
+          }
+        }
+      );
+    }
+  };
+  useEffect(() => {
+    calculateRoute();
+  }, [startMarker, endMarker]);
+
   return (
     mapCenter && (
       <LoadScript
@@ -131,9 +161,12 @@ const MapComponent = () => {
           zoom={14}
           onClick={handleMapClick}
         >
-          {startMarker && <Marker position={startMarker} />}
+        
+        {startMarker && <Marker position={startMarker} />}
           {endMarker && <Marker position={endMarker} />}
+          {directions && <DirectionsRenderer directions={directions} />}
         </GoogleMap>
+        
 
         <Autocomplete
           onLoad={onLoadStartAutocomplete}
@@ -158,7 +191,16 @@ const MapComponent = () => {
             onChange={handleEndAddressChange}
           />
         </Autocomplete>
+        {distance && duration && (
+          <div>
+            <p>Distance: {distance}</p>
+            <p>Duration: {duration}</p>
+          </div>
+        )}
+
+        {error && <div>{error}</div>}
       </LoadScript>
+    
     )
   );
 };
