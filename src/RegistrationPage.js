@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-
 
 const UserRegistration = () => {
   const navigate = useNavigate();
@@ -13,12 +11,21 @@ const UserRegistration = () => {
     e.preventDefault();
 
     try {
-      const auth = getAuth();
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const response = await fetch('http://localhost:3500/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      setMessage(`User registered successfully: ${user.email}`)
-      navigate('/login');;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setMessage(`User registered successfully: ${data.email}`);
+      navigate('/login');
     } catch (error) {
       console.error('Registration error:', error);
       setMessage('Error registering user');
