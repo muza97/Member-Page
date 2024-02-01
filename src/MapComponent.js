@@ -3,6 +3,7 @@ import { GoogleMap, LoadScript, Marker, Autocomplete, DirectionsRenderer } from 
 import Geocode from 'react-geocode';
 import axios from 'axios';
 import JourneyPrice from './JourneyPrice';
+import './map.css';
 
 const containerStyle = { width: '100%', height: '400px' };
 
@@ -137,40 +138,41 @@ const MapComponent = () => {
   }, [startMarker, endMarker]);
 
   return (
-    mapCenter && (
+    mapCenter ? (
       <LoadScript googleMapsApiKey={apiKey} libraries={libraries}>
-        <GoogleMap mapContainerStyle={containerStyle} center={mapCenter} zoom={14} onClick={handleMapClick}>
-          {startMarker && <Marker position={startMarker} />}
-          {endMarker && <Marker position={endMarker} />}
-          {directions && <DirectionsRenderer directions={directions} />}
-        </GoogleMap>
-        <Autocomplete onLoad={onLoadStartAutocomplete} onPlaceChanged={() => onPlaceChanged(true)}>
-          <input
-            type="text"
-            placeholder="Start Address"
-            value={startAddress}
-            onChange={handleStartAddressChange}
-          />
-        </Autocomplete>
-        <Autocomplete onLoad={onLoadEndAutocomplete} onPlaceChanged={() => onPlaceChanged(false)}>
-          <input
-            type="text"
-            placeholder="End Address"
-            value={endAddress}
-            onChange={handleEndAddressChange}
-          />
-        </Autocomplete>
-        {distance && duration && (
-          <div>
-            <p>Distance: {distance}</p>
-            <p>Duration: {duration}</p>
-            <JourneyPrice distance={distance} />
-          </div>
-        )}
-        {error && <div>{error}</div>}
+        <div className="map-container">
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            center={mapCenter}
+            zoom={14}
+            onClick={handleMapClick}
+          >
+            {startMarker && <Marker position={startMarker} icon="/path-to-start-icon.png" />}
+            {endMarker && <Marker position={endMarker} icon="/path-to-end-icon.png" />}
+            {directions && <DirectionsRenderer directions={directions} />}
+          </GoogleMap>
+          <Autocomplete onLoad={onLoadStartAutocomplete} onPlaceChanged={() => onPlaceChanged(true)}>
+            <input
+              className="location-input"
+              type="text"
+              placeholder="Start Address"
+              value={startAddress}
+              onChange={handleStartAddressChange}
+            />
+          </Autocomplete>
+          {distance && duration && (
+            <div>
+              <p>Distance: {distance}</p>
+              <p>Duration: {duration}</p>
+              <JourneyPrice distance={distance} />
+              <button className="button">Book Taxi Now</button>
+            </div>
+          )}
+          {error && <div>{error}</div>}
+        </div>
       </LoadScript>
-    )
+    ) : null
   );
-        }  
-
-export default React.memo(MapComponent);
+          }
+  export default React.memo(MapComponent);
+  
